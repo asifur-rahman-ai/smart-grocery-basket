@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Grocery Basket</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --forest:#173300; --forest-deep:#0c1e02;
+    --lime:#9ee86f; --lime-soft:rgba(158,232,111,.16); --lime-line:rgba(158,232,111,.4);
+    --amber:#F2C14E; --red:#ff5a45;
+    --glass:rgba(255,255,255,.07); --glass-border:rgba(255,255,255,.16);
+    --ink:#F2FBE9; --ink-soft:#AFCB9A;
+  }
+  body{
+    font-family:'Hind Siliguri',sans-serif; color:var(--ink); min-height:100vh;
+    background:
+      radial-gradient(60% 50% at 85% -5%, rgba(158,232,111,.26), transparent 60%),
+      radial-gradient(55% 45% at -10% 15%, rgba(158,232,111,.14), transparent 60%),
+      linear-gradient(160deg, var(--forest) 0%, var(--forest-deep) 100%);
+    background-attachment:fixed;
+  }
+  .app{max-width:1040px;}
+  .brand-mark{
+    width:48px;height:48px;border-radius:14px;font-size:26px;flex-shrink:0;
+    background:linear-gradient(145deg,var(--lime),#6fbf46);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 18px rgba(158,232,111,.35);
+  }
+  h1{font-size:1.65rem;font-weight:700;margin:0;}
+  .subtitle{color:var(--ink-soft);margin:0;font-size:.95rem;}
+  .btn-lime{
+    background:linear-gradient(135deg,var(--lime),#6fbf46);color:var(--forest-deep);
+    font-weight:700;border:0;
+  }
+  .btn-lime:hover,.btn-lime:focus{color:var(--forest-deep);filter:brightness(1.06);}
+  .summary{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;color:var(--ink-soft);font-size:.9rem;
+  }
+  .pill{
+    padding:4px 12px;border-radius:999px;border:1px solid var(--glass-border);background:var(--glass);
+  }
+  .pill.warn{border-color:rgba(255,90,69,.55);color:#ffc7b4;background:rgba(255,90,69,.14);}
+
+  .item-card{
+    background:var(--glass);border:1px solid var(--glass-border);border-radius:18px;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    padding:16px;height:100%;position:relative;
+    box-shadow:0 8px 28px rgba(0,0,0,.22);
+  }
+  .item-card.is-ok{border-color:var(--lime-line);}
+  .item-card.is-low{border-color:var(--red);animation:blink 1.1s ease-in-out infinite;}
+  @keyframes blink{
+    0%,100%{background:rgba(255,90,69,.10);box-shadow:0 0 0 rgba(255,90,69,0);}
+    50%{background:rgba(255,90,69,.32);box-shadow:0 0 24px rgba(255,90,69,.55);}
+  }
+  @media (prefers-reduced-motion: reduce){.item-card.is-low{animation:none;background:rgba(255,90,69,.2);}}
+  .emoji{font-size:2.4rem;line-height:1;}
+  .item-name{font-weight:600;font-size:1.15rem;line-height:1.2;word-break:break-word;}
+  .weight{color:var(--ink-soft);font-size:.92rem;}
+  .weight strong{color:var(--ink);font-size:1.05rem;}
+  .del-btn{
+    position:absolute;top:8px;right:8px;width:28px;height:28px;padding:0;line-height:1;
+    border-radius:8px;border:1px solid var(--glass-border);background:rgba(0,0,0,.2);color:var(--ink-soft);
+  }
+  .del-btn:hover{color:#fff;border-color:var(--red);background:rgba(255,90,69,.3);}
+  .meter{position:relative;height:12px;border-radius:8px;background:rgba(255,255,255,.14);overflow:visible;}
+  .meter-fill{height:100%;border-radius:8px;transition:width .3s ease;}
+  .is-ok .meter-fill{background:var(--lime);}
+  .is-low .meter-fill{background:var(--red);}
+  .meter-min{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber);border-radius:2px;}
+  .status{font-weight:600;font-size:.95rem;}
+  .is-ok .status{color:var(--lime);}
+  .is-low .status{color:#ffc7b4;}
+  .step-btn{width:42px;height:38px;font-size:1.05rem;padding:0;border-radius:10px;}
+  .empty-state{
+    border:1px dashed var(--glass-border);border-radius:18px;padding:40px 20px;text-align:center;color:var(--ink-soft);
+  }
+  .form-control,.form-select{background-color:rgba(255,255,255,.06);}
+  .modal-content{background:var(--forest);border:1px solid var(--glass-border);}
+  .form-text{color:var(--ink-soft)!important;}
+  footer{color:var(--ink-soft);font-size:.8rem;}
+</style>
+</head>
+<body>
+<div class="container app py-4 py-md-5">
+
+  <header class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand-mark">🧺</div>
+      <div>
+        <h1>Smart Grocery Basket</h1>
+        <p class="subtitle">Know what's running low at home, from anywhere</p>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <div class="form-check form-switch m-0" title="Reduces every item's weight a little every 5 seconds (changes saved data)">
+        <input class="form-check-input" type="checkbox" role="switch" id="demoSwitch">
+        <label class="form-check-label small" for="demoSwitch">Demo simulation</label>
+      </div>
+      <button class="btn btn-lime px-4" id="openAdd">➕ Add Item</button>
+    </div>
+  </header>
+
+  <div class="summary mb-4" id="summary" aria-live="polite"></div>
+
+  <div class="row g-3" id="grid"></div>
+  <div id="empty" class="empty-state d-none">
+    <div style="font-size:2.5rem">🧺</div>
+    <p class="mb-0 mt-2">Your basket is empty. Tap <strong>Add Item</strong> to start tracking.</p>
+  </div>
+
+  <footer class="mt-5">
+    Data is saved only in this browser (LocalStorage). Nothing is sent to any server.
+  </footer>
+</div>
+
+<!-- Add item modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="addForm" novalidate>
+      <div class="modal-header border-0">
+        <h2 class="modal-title fs-5" id="addModalLabel">Add New Item</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-8">
+            <label class="form-label" for="fName">Item name</label>
+            <input class="form-control" id="fName" list="suggestions" autocomplete="off" placeholder="e.g. Potato" required>
+            <datalist id="suggestions"></datalist>
+            <div class="invalid-feedback">Please enter an item name.</div>
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="fEmoji">Emoji</label>
+            <input class="form-control text-center" id="fEmoji" maxlength="4" placeholder="📦">
+          </div>
+          <div class="col-12 form-text mt-1">Pick a suggestion or type any new item. Leave emoji empty for an automatic one (📦 if unknown).</div>
+          <div class="col-4">
+            <label class="form-label" for="fQty">Current (kg)</label>
+            <input class="form-control" type="number" id="fQty" min="0" step="0.1" value="0" required>
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="fMax">Capacity (kg)</label>
+            <input class="form-control" type="number" id="fMax" min="0.5" step="0.5" value="10" required>
+          </div>
+          <div class="col-4">
+            <label class="form-label" for="fMin">Alert below (kg)</label>
+            <input class="form-control" type="number" id="fMin" min="0" step="0.1" value="2" required>
+          </div>
+          <div class="col-12"><div class="text-danger small d-none" id="formError"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-lime px-4">Add to Basket</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ================= Config ================= */
+  const STORAGE_KEY = 'smartGroceryBasket.v1';
+  const STEP_KG = 0.5;
+
+  /* Hardware integration (future): ESP32 + HX711 + Load Cell.
+     Set enabled:true and point `url` at the device. Expected JSON from the device:
+       [ { "id": "potato", "weight": 3.2 }, { "name": "Rice", "weight": 7.5 } ]
+     An item is matched by its id OR its name (case-insensitive).
+     Note: a page served over https (GitHub Pages) cannot fetch plain http:// devices
+     (mixed content). Use https on the device, a tunnel, or open the file locally. */
+  const HARDWARE = {
+    enabled: false,
+    mode: 'fetch',                       // 'fetch' (polling) or 'websocket'
+    url: 'http://192.168.0.50/weights',
+    wsUrl: 'ws://192.168.0.50:81',
+    intervalMs: 5000
+  };
+
+  const CATALOG = [
+    {name:'Potato',  emoji:'🥔', alias:['aloo','আলু']},
+    {name:'Onion',   emoji:'🧅', alias:['peyaj','পেঁয়াজ','পিয়াজ']},
+    {name:'Rice',    emoji:'🍚', alias:['chal','চাল']},
+    {name:'Lentils', emoji:'🫘', alias:['dal','lentil','ডাল']},
+    {name:'Fish',    emoji:'🐟', alias:['mach','মাছ']},
+    {name:'Meat',    emoji:'🥩', alias:['beef','mutton','mangsho','মাংস']},
+    {name:'Chicken', emoji:'🍗', alias:['murgi','মুরগি']},
+    {name:'Eggs',    emoji:'🥚', alias:['egg','dim','ডিম']},
+    {name:'Milk',    emoji:'🥛', alias:['dudh','দুধ']},
+    {name:'Cooking Oil', emoji:'🫗', alias:['oil','tel','তেল']},
+    {name:'Sugar',   emoji:'🍬', alias:['chini','চিনি']},
+    {name:'Salt',    emoji:'🧂', alias:['lobon','লবণ']},
+    {name:'Flour',   emoji:'🌾', alias:['atta','maida','আটা','ময়দা']},
+    {name:'Tomato',  emoji:'🍅', alias:['tometo','টমেটো']},
+    {name:'Garlic',  emoji:'🧄', alias:['roshun','রসুন']},
+    {name:'Ginger',  emoji:'🫚', alias:['ada','আদা']},
+    {name:'Green Chili', emoji:'🌶️', alias:['chili','chilli','morich','মরিচ']},
+    {name:'Carrot',  emoji:'🥕', alias:['gajor','গাজর']},
+    {name:'Eggplant',emoji:'🍆', alias:['brinjal','begun','বেগুন']},
+    {name:'Banana',  emoji:'🍌', alias:['kola','কলা']},
+    {name:'Apple',   emoji:'🍎', alias:['apel','আপেল']},
+    {name:'Lemon',   emoji:'🍋', alias:['lebu','লেবু']},
+    {name:'Bread',   emoji:'🍞', alias:['ruti','pauruti','পাউরুটি']},
+    {name:'Tea',     emoji:'🍵', alias:['cha','চা']},
+    {name:'Water',   emoji:'💧', alias:['pani','পানি']}
+  ];
+
+  const DEFAULT_ITEMS = [
+    {id:'potato', name:'Potato',  emoji:'🥔', qty:1.5, max:10, min:3},
+    {id:'onion',  name:'Onion',   emoji:'🧅', qty:4,   max:8,  min:2},
+    {id:'rice',   name:'Rice',    emoji:'🍚', qty:12,  max:25, min:5},
+    {id:'lentils',name:'Lentils', emoji:'🫘', qty:2.5, max:5,  min:1},
+    {id:'fish',   name:'Fish',    emoji:'🐟', qty:0.5, max:3,  min:1}
+  ];
+
+  /* ================= State & storage ================= */
+  let items = loadItems();
+
+  function loadItems(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) return parsed;
+      }
+    }catch(e){}
+    return DEFAULT_ITEMS.map(i => ({...i}));
+  }
+  function saveItems(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }catch(e){}
+  }
+
+  /* ================= Helpers ================= */
+  const $ = (id) => document.getElementById(id);
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const fmt = (n) => Number(round2(n).toFixed(2)).toString();
+  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const newId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'i' + Date.now() + Math.random().toString(16).slice(2);
+  const isLow = (it) => it.qty < it.min;
+
+  function guessEmoji(name){
+    const n = name.trim().toLowerCase();
+    if(!n) return '📦';
+    for(const c of CATALOG){
+      if(c.name.toLowerCase() === n || c.alias.some(a => a.toLowerCase() === n)) return c.emoji;
+    }
+    for(const c of CATALOG){
+      const keys = [c.name.toLowerCase(), ...c.alias.map(a => a.toLowerCase())];
+      if(keys.some(k => n.includes(k) || (n.length > 2 && k.includes(n)))) return c.emoji;
+    }
+    return '📦';
+  }
+
+  /* ================= Render ================= */
+  function render(){
+    const grid = $('grid');
+    grid.innerHTML = items.map(it => {
+      const low = isLow(it);
+      const pct = it.max > 0 ? clamp((it.qty / it.max) * 100, 0, 100) : 0;
+      const minPct = it.max > 0 ? clamp((it.min / it.max) * 100, 0, 100) : 0;
+      return `
+      <div class="col-12 col-sm-6 col-lg-4">
+        <article class="item-card ${low ? 'is-low' : 'is-ok'}" data-id="${esc(it.id)}">
+          <button class="del-btn" data-action="del" aria-label="Delete ${esc(it.name)}" title="Delete">✖</button>
+          <div class="d-flex align-items-center gap-3 mb-3 pe-4">
+            <div class="emoji" aria-hidden="true">${esc(it.emoji || '📦')}</div>
+            <div>
+              <div class="item-name">${esc(it.name)}</div>
+              <div class="weight"><strong>${fmt(it.qty)} kg</strong> / ${fmt(it.max)} kg</div>
+            </div>
+          </div>
+          <div class="meter mb-2" role="progressbar" aria-valuemin="0" aria-valuemax="${fmt(it.max)}" aria-valuenow="${fmt(it.qty)}" aria-label="${esc(it.name)} stock level">
+            <div class="meter-fill" style="width:${pct}%"></div>
+            <div class="meter-min" style="left:${minPct}%" title="Alert level: ${fmt(it.min)} kg"></div>
+          </div>
+          <div class="status mb-3">${low ? '⚠️ Low stock! Need to buy' : '✅ Stock is fine'}</div>
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-light step-btn" data-action="dec" aria-label="Decrease by ${STEP_KG} kg" ${it.qty <= 0 ? 'disabled' : ''}>➖</button>
+              <button class="btn btn-outline-light step-btn" data-action="inc" aria-label="Increase by ${STEP_KG} kg" ${it.qty >= it.max ? 'disabled' : ''}>➕</button>
+            </div>
+            <span class="small text-secondary">±${STEP_KG} kg per tap</span>
+          </div>
+        </article>
+      </div>`;
+    }).join('');
+
+    $('empty').classList.toggle('d-none', items.length > 0);
+
+    const lowCount = items.filter(isLow).length;
+    $('summary').innerHTML =
+      `<span class="pill">${items.length} item${items.length === 1 ? '' : 's'}</span>` +
+      (lowCount
+        ? `<span class="pill warn">⚠️ ${lowCount} running low: ${esc(items.filter(isLow).map(i => i.name).join(', '))}</span>`
+        : (items.length ? `<span class="pill">✅ Everything is stocked</span>` : ''));
+  }
+
+  /* ================= Actions ================= */
+  function changeQty(id, delta){
+    const it = items.find(i => i.id === id);
+    if(!it) return;
+    it.qty = round2(clamp(it.qty + delta, 0, it.max));
+    saveItems(); render();
+  }
+  function removeItem(id){
+    const it = items.find(i => i.id === id);
+    if(!it) return;
+    if(!confirm('Delete "' + it.name + '" from your basket?')) return;
+    items = items.filter(i => i.id !== id);
+    saveItems(); render();
+  }
+
+  $('grid').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const id = btn.closest('.item-card').dataset.id;
+    const act = btn.dataset.action;
+    if(act === 'inc') changeQty(id, STEP_KG);
+    else if(act === 'dec') changeQty(id, -STEP_KG);
+    else if(act === 'del') removeItem(id);
+  });
+
+  /* ================= Add-item modal ================= */
+  const modal = new bootstrap.Modal($('addModal'));
+  const form = $('addForm');
+  const dl = $('suggestions');
+  dl.innerHTML = CATALOG.map(c => `<option value="${esc(c.name)}">${esc(c.emoji)}</option>`).join('');
+
+  $('openAdd').addEventListener('click', () => {
+    form.reset();
+    form.classList.remove('was-validated');
+    $('formError').classList.add('d-none');
+    $('fQty').value = 0; $('fMax').value = 10; $('fMin').value = 2;
+    modal.show();
+  });
+  $('addModal').addEventListener('shown.bs.modal', () => $('fName').focus());
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('fName').value.trim();
+    const qty = parseFloat($('fQty').value);
+    const max = parseFloat($('fMax').value);
+    const min = parseFloat($('fMin').value);
+    const err = $('formError');
+    form.classList.add('was-validated');
+
+    let msg = '';
+    if(!name) msg = 'Please enter an item name.';
+    else if(!(max > 0)) msg = 'Capacity must be greater than 0.';
+    else if(!(qty >= 0)) msg = 'Current weight cannot be negative.';
+    else if(!(min >= 0)) msg = 'Alert level cannot be negative.';
+    else if(qty > max) msg = 'Current weight cannot be more than the capacity.';
+    else if(min > max) msg = 'Alert level cannot be more than the capacity.';
+    if(msg){ err.textContent = msg; err.classList.remove('d-none'); return; }
+    err.classList.add('d-none');
+
+    const emoji = $('fEmoji').value.trim() || guessEmoji(name);
+    items.push({id:newId(), name, emoji, qty:round2(qty), max:round2(max), min:round2(min)});
+    saveItems(); render();
+    modal.hide();
+  });
+
+  /* ================= Hardware integration (ready for ESP32) ================= */
+  function applyReading(r){
+    if(!r || typeof r.weight !== 'number' || !isFinite(r.weight)) return false;
+    const key = String(r.id !== undefined ? r.id : (r.name || '')).toLowerCase();
+    const it = items.find(i => i.id.toLowerCase() === key || i.name.toLowerCase() === key);
+    if(!it) return false;
+    it.qty = round2(clamp(r.weight, 0, it.max));
+    return true;
+  }
+  function applyReadings(list){
+    const arr = Array.isArray(list) ? list : [list];
+    let changed = false;
+    arr.forEach(r => { if(applyReading(r)) changed = true; });
+    if(changed){ saveItems(); render(); }
+  }
+
+  let hwTimer = null, ws = null;
+  function startHardware(){
+    if(!HARDWARE.enabled) return;
+    if(HARDWARE.mode === 'websocket'){
+      ws = new WebSocket(HARDWARE.wsUrl);
+      ws.onmessage = (ev) => { try{ applyReadings(JSON.parse(ev.data)); }catch(e){} };
+    } else {
+      const poll = () => fetch(HARDWARE.url, {cache:'no-store'})
+        .then(r => r.json()).then(applyReadings).catch(() => {});
+      poll();
+      hwTimer = setInterval(poll, HARDWARE.intervalMs);
+    }
+  }
+  /* Public API: window.GroceryBasket.updateWeight('Potato', 3.2) */
+  window.GroceryBasket = {
+    updateWeight: (idOrName, weight) => applyReadings({id:idOrName, weight}),
+    updateMany: applyReadings,
+    getItems: () => items.map(i => ({...i}))
+  };
+
+  /* ================= Optional demo simulation ================= */
+  let demoTimer = null;
+  $('demoSwitch').addEventListener('change', (e) => {
+    if(e.target.checked){
+      demoTimer = setInterval(() => {
+        items.forEach(it => { it.qty = round2(Math.max(0, it.qty - (0.1 + Math.random() * 0.2))); });
+        saveItems(); render();
+      }, 5000);
+    } else {
+      clearInterval(demoTimer); demoTimer = null;
+    }
+  });
+
+  /* ================= Init ================= */
+  render();
+  startHardware();
+})();
+</script>
+</body>
+</html>
