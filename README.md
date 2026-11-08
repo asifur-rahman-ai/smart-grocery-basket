@@ -2,6 +2,8 @@
 
 A simple, serverless web app to monitor how much of each grocery item is left at home. When something runs low, its card turns red and blinks, so nobody has to call or text "we're out of potatoes".
 
+🔗 **Live demo:** https://asifur-rahman-ai.github.io/smart-grocery-basket/
+
 **Phase 1 (this repo):** web app with manual weight control.
 **Phase 2 (planned):** ESP32 + HX711 + load cell sends live weight to the app.
 
@@ -30,7 +32,7 @@ Download `index.html` and double-click it. An internet connection is needed once
 1. Push `index.html` (and this README) to the root of a repository, e.g. `smart-grocery-basket`
 2. Go to **Settings → Pages**
 3. Under **Build and deployment**, choose **Deploy from a branch**, branch `main`, folder `/ (root)`
-4. After a minute the app is live at `https://<your-username>.github.io/smart-grocery-basket/`
+4. After a minute the app is live at `https://asifur-rahman-ai.github.io/smart-grocery-basket/`
 
 ## Data & privacy
 
@@ -91,6 +93,10 @@ Items are matched by `id` or `name` (case-insensitive). Weights are clamped betw
 - [ ] ESP32 + HX711 firmware and wiring guide
 - [ ] Optional shared backend so family members can see the same data on different devices
 - [ ] Low-stock notifications
+
+## Author
+
+Md Asifur Rahman ([@asifur-rahman-ai](https://github.com/asifur-rahman-ai))
 
 ## License
 
